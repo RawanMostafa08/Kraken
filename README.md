@@ -20,4 +20,5 @@ to the manager.
 ## Documentation
 
 - [Architecture](docs/architecture.md) — components and how they interact
+- [Worker](docs/worker.md) — internal worker components
 - [Tasks](docs/tasks.md) — task model and lifecycle

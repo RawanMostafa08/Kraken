@@ -31,6 +31,9 @@ The data plane. One worker runs on each machine in the cluster. The worker:
 - Persists its own task state in local **task storage**.
 - Reports **metrics** about its tasks and the host system back to the manager.
 
+See [worker.md](worker.md) for a deeper drill-down into the worker's
+internal components.
+
 ### Scheduler
 
 The placement engine, invoked by the manager. It runs three phases:
