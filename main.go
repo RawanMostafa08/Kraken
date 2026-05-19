@@ -6,11 +6,44 @@ import (
 	"RawanMostafa08/Kraken/task"
 	"RawanMostafa08/Kraken/worker"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
+	"github.com/moby/moby/client"
 )
+
+func createContainer() (*task.Docker, *task.DockerResult) {
+	config := task.Config{
+		Name:  "test-container-1",
+		Image: "postgres:13",
+		Env: []string{
+			"POSTGRES_USER=cube",
+			"POSTGRES_PASSWORD=secret",
+		},
+	}
+	cl, _ := client.New(client.FromEnv)
+	d := task.Docker{Client: cl, Config: config}
+	result := d.Run()
+	if result.Error != nil {
+		log.Printf("Error creating container: %v\n", result.Error)
+		return nil, nil
+	}
+	log.Printf("container %s is running with config %v \n", result.ContainerId, config)
+	return &d, &result
+}
+
+func stopContainer(d *task.Docker, id string) *task.DockerResult {
+	result := d.Stop(id)
+	if result.Error != nil {
+		log.Printf("Error stopping container: %v\n", result.Error)
+		return nil
+	}
+	log.Printf("container %s stopped and removed successfully\n", id)
+	return &result
+}
 
 func main() {
 	t := task.Task{
@@ -41,10 +74,10 @@ func main() {
 	w.StartTask()
 	w.StopTask()
 	m := manager.Manager{
-		Pending: *queue.New(),
-		TaskDb:  make(map[string][]*task.Task),
+		Pending:     *queue.New(),
+		TaskDb:      make(map[string][]*task.Task),
 		TaskEventDb: make(map[string][]*task.TaskEvent),
-		Workers: []string{w.Name},
+		Workers:     []string{w.Name},
 	}
 	fmt.Printf("manager: %v\n", m)
 	m.SelectWorker()
@@ -59,4 +92,15 @@ func main() {
 		Role:   "worker",
 	}
 	fmt.Printf("node: %v\n", n)
+
+	fmt.Printf("create a test container\n")
+	dockerTask, createResult := createContainer()
+	if createResult.Error != nil {
+		fmt.Printf("%v", createResult.Error)
+		os.Exit(1)
+	}
+	time.Sleep(time.Second * 5)
+	fmt.Printf("stopping container %s\n", createResult.ContainerId)
+	_ = stopContainer(dockerTask, createResult.ContainerId)
+
 }

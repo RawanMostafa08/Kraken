@@ -131,6 +131,30 @@ func (d *Docker) Run() DockerResult {
 	return DockerResult{
 		ContainerId: resp.ID,
 		Action:      "start",
-		Result:      "Container started successfully",
+		Result:      "success",
+	}
+}
+
+func (d *Docker) Stop(id string) DockerResult {
+	log.Printf("Attempting to stop container %v", id)
+	ctx := context.Background()
+	_, err := d.Client.ContainerStop(ctx, id, client.ContainerStopOptions{})
+	if err != nil {
+		log.Printf("Error stopping container %s: %v\n", id, err)
+		return DockerResult{Error: err}
+	}
+	_, err = d.Client.ContainerRemove(ctx, id, client.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		RemoveLinks:   false,
+		Force:         false,
+	})
+	if err != nil {
+		log.Printf("Error removing container %s: %v\n", id, err)
+		return DockerResult{Error: err}
+	}
+	return DockerResult{
+		ContainerId: id,
+		Action:      "stop",
+		Result:      "success",
 	}
 }
